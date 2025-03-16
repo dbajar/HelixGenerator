@@ -47,7 +47,7 @@ def helix_point(radius, pitch, resolution, t):
 
 
 # Generates a Helix in Fusion    
-def helix_maker(radius, revolutions, pitch, resolution, plane):
+def helix_maker(radius, revolutions, pitch, num_points, plane):
 
     # Gets necessary application objects
     app_objects = get_app_objects()
@@ -64,8 +64,11 @@ def helix_maker(radius, revolutions, pitch, resolution, plane):
     # Collection to hold helix points
     points = adsk.core.ObjectCollection.create()
 
+    # Calculate the resolution (ie. points per revolution)
+    resolution = (num_points - 1) / revolutions
+
     # Iterate based on revolutions and resolution
-    for t in range(0, int(revolutions*resolution)+1):
+    for t in range(0, num_points):
         
         # Add Point to collection
         points.add(helix_point(radius, pitch, resolution, t))
@@ -104,7 +107,7 @@ class HelixCommand(Fusion360CommandBase):
         helix_maker(input_values['radius'],
                     input_values['revolutions'],
                     input_values['pitch'],
-                    input_values['resolution'],
+                    input_values['num_points'],
                     input_values['plane'][0])
 
     # Runs when the user presses ok button
@@ -114,7 +117,7 @@ class HelixCommand(Fusion360CommandBase):
         helix_maker(input_values['radius'],
                     input_values['revolutions'],
                     input_values['pitch'],
-                    input_values['resolution'],
+                    input_values['num_points'],
                     input_values['plane'][0])
 
     def on_destroy(self, command, inputs, reason, input_values):
@@ -157,8 +160,9 @@ class HelixCommand(Fusion360CommandBase):
         pitch_input = adsk.core.ValueInput.createByReal(2.54)
         inputs.addValueInput('pitch', 'Pitch', default_units, pitch_input)
         
-        # Define points per revolution -> resolution
-        inputs.addIntegerSpinnerCommandInput('resolution', 'Resolution', 0, 1000, 1, 10)
-        
         # Number of revolutions
-        inputs.addIntegerSpinnerCommandInput('revolutions', 'Revolutions', 0, 1000, 1, 1)
+        revolutions_input = adsk.core.ValueInput.createByReal(1)
+        inputs.addValueInput('revolutions', 'Revolutions', '', revolutions_input)
+
+        # Number of points
+        inputs.addIntegerSpinnerCommandInput('num_points', 'Number Of Points', 2, 1000, 1, 17)
