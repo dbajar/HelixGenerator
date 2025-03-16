@@ -22,10 +22,10 @@ SHOW_COMPONENT_ORIGIN_FOLDER = True
 # you will want to do something about adjusting for the resolution in the t multiplier
 # As it is now the higher the resolution the wider the curve will get.  
 # need to do something like t/resolution probably
-def variable_helix_point(radius, pitch, resolution, start_angle, t):
+def variable_helix_point(radius, pitch, resolution, magnitude, start_angle, t):
     # Helix math
-    x = (.25*t+.5)*radius * math.cos(start_angle + 2*math.pi*t/resolution)
-    y = (.25*t+.5)*radius * math.sin(start_angle + 2*math.pi*t/resolution)
+    x = (.25*t+.5)*radius * math.cos(magnitude*(start_angle + 2*math.pi*t/resolution))
+    y = (.25*t+.5)*radius * math.sin(magnitude*(start_angle + 2*math.pi*t/resolution))
     z = pitch * t / resolution
     
     # Create Fusion point
@@ -34,11 +34,11 @@ def variable_helix_point(radius, pitch, resolution, start_angle, t):
 
 
 # Generic Math Function to generate a point on a helix
-def helix_point(radius, pitch, resolution, start_angle, t):
+def helix_point(radius, pitch, resolution, magnitude, start_angle, t):
         
     # Helix math
-    x = radius * math.cos(start_angle + 2*math.pi*t/resolution)
-    y = radius * math.sin(start_angle + 2*math.pi*t/resolution)
+    x = radius * math.cos(magnitude*(start_angle + 2*math.pi*t/resolution))
+    y = radius * math.sin(magnitude*(start_angle + 2*math.pi*t/resolution))
     z = pitch * t / resolution
     
     # Create Fusion point
@@ -47,7 +47,7 @@ def helix_point(radius, pitch, resolution, start_angle, t):
 
 
 # Generates a Helix in Fusion    
-def helix_maker(radius, revolutions, pitch, start_angle, num_points, plane):
+def helix_maker(radius, revolutions, pitch, direction, start_angle, num_points, plane):
 
     # Gets necessary application objects
     app_objects = get_app_objects()
@@ -67,14 +67,17 @@ def helix_maker(radius, revolutions, pitch, start_angle, num_points, plane):
     # Calculate the resolution (ie. points per revolution)
     resolution = (num_points - 1) / revolutions
 
+    # Calculate the rotation direction as a magnitude
+    magnitude = 1 if direction else -1
+
     # Iterate based on revolutions and resolution
     for t in range(0, num_points):
         
         # Add Point to collection
-        points.add(helix_point(radius, pitch, resolution, start_angle, t))
+        points.add(helix_point(radius, pitch, resolution, magnitude, start_angle, t))
         
         # use this instead to create the variable helix
-        # points.add(variable_helix_point(radius, pitch, resolution, start_angle, t))
+        # points.add(variable_helix_point(radius, pitch, resolution, magnitude, start_angle, t))
     
     # Create Spline through points
     sketch.sketchCurves.sketchFittedSplines.add(points)
@@ -107,6 +110,7 @@ class HelixCommand(Fusion360CommandBase):
         helix_maker(input_values['radius'],
                     input_values['revolutions'],
                     input_values['pitch'],
+                    input_values['direction'],
                     input_values['start_angle'],
                     input_values['num_points'],
                     input_values['plane'][0])
@@ -118,6 +122,7 @@ class HelixCommand(Fusion360CommandBase):
         helix_maker(input_values['radius'],
                     input_values['revolutions'],
                     input_values['pitch'],
+                    input_values['direction'],
                     input_values['start_angle'],
                     input_values['num_points'],
                     input_values['plane'][0])
@@ -166,6 +171,9 @@ class HelixCommand(Fusion360CommandBase):
         # Number of revolutions
         revolutions_input = adsk.core.ValueInput.createByReal(1)
         inputs.addValueInput('revolutions', 'Revolutions', '', revolutions_input)
+
+        # Rotation direction
+        inputs.addBoolValueInput('direction', 'Direction', True, "", True)
 
         # Start angle
         start_angle_input = adsk.core.ValueInput.createByReal(0)
